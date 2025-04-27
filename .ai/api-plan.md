@@ -2,267 +2,171 @@
 
 ## 1. Resources
 
-- **Users** (mapped to the `users` table)
-- **Flashcards** (mapped to the `flashcards` table)
-- **Generations** (mapped to the `generations` table)
-- **Generation Error Logs** (mapped to the `generation_error_logs` table; internal/admin use)
-- **Learning Sessions** (API abstraction for spaced repetition sessions)
+- **Users**
+  - *Database Table*: `users`
+  - Managed through Supabase Auth; operations such as registration and login may be handled via Supabase or custom endpoints if needed.
+
+- **Flashcards**
+  - *Database Table*: `flashcards`
+  - Fields include: `id`, `front`, `back`, `source`, `created_at`, `updated_at`, `generation_id`, `user_id`.
+
+- **Generations**
+  - *Database Table*: `generations`
+  - Stores metadata and results of AI generation requests (e.g., `model`, `generated_count`, `source_text_hash`, `source_text_length`, `generation_duration`).
+
+- **Generation Error Logs**
+  - *Database Table*: `generation_error_logs`
+  - Used for logging errors encountered during AI flashcard generation.
 
 ## 2. Endpoints
 
-### A. Authentication & User Management
-<!-- 1. **Register User**  
-   - **Method:** POST  
-   - **URL:** `/api/auth/register`  
-   - **Description:** Register a new user account.  
-   - **Request JSON:**
-     ```json
-     {
-       "email": "user@example.com",
-       "password": "securePassword"
-     }
-     ```  
-   - **Response JSON:**
-     ```json
-     { "message": "User registered successfully" }
-     ```  
-   - **Success Codes:** 201  
-   - **Error Codes:** 400 (validation error), 409 (email already exists)
+### 2.2. Flashcards
 
-2. **Login User**  
-   - **Method:** POST  
-   - **URL:** `/api/auth/login`  
-   - **Description:** Authenticate a user and return a JWT token.  
-   - **Request JSON:**
-     ```json
-     {
-       "email": "user@example.com",
-       "password": "securePassword"
-     }
-     ```  
-   - **Response JSON:**
-     ```json
-     {
-       "token": "jwt-token-string",
-       "user": { "id": "user-uuid", "email": "user@example.com" }
-     }
-     ```  
-   - **Success Codes:** 200  
-   - **Error Codes:** 400 (validation error), 401 (incorrect credentials) -->
+- **GET `/flashcards`**
+  - **Description**: Retrieve a paginated, filtered, and sortable list of flashcards for the authenticated user.
+  - **Query Parameters**:
+    - `page` (default: 1)
+    - `limit` (default: 10)
+    - `sort` (e.g., `created_at`)
+    - `order` (`asc` or `desc`)
+    - Optional filters (e.g., `source`, `generation_id`).
+  - **Response JSON**:
+    ```json
+    {
+      "data": [
+        { "id": 1, "front": "Question", "back": "Answer", "source": "manual", "created_at": "...", "updated_at": "..." }
+      ],
+      "pagination": { "page": 1, "limit": 10, "total": 100 }
+    }
+    ```
+  - **Errors**: 401 Unauthorized if token is invalid.
 
-### B. Flashcards Management
+- **GET `/flashcards/{id}`**
+  - **Description**: Retrieve details for a specific flashcard.
+  - **Response JSON**: Flashcard object.
+  - **Errors**: 404 Not Found, 401 Unauthorized.
 
-1. **Get Flashcards**  
-   - **Method:** GET  
-   - **URL:** `/api/flashcards`  
-   - **Description:** Retrieve a paginated list of flashcards for the authenticated user.  
-   - **Query Parameters:**  
-     - `page`: number (optional)  
-     - `limit`: number (optional)  
-     - `source`: string (filter by flashcard source e.g., "manual", "ai-edited", "ai-full")  
-   - **Response JSON:**
+- **POST `/flashcards`**
+  - **Description**: Create one or more flashcards (manually or from AI generation).
+  - **Request JSON**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "front": "Question 1",
+          "back": "Answer 1",
+          "source": "manual",
+          "generation_id": null
+        },
+        {
+          "front": "Question 2",
+          "back": "Answer 2",
+          "source": "ai-full",
+          "generation_id": 123
+        }
+      ]
+    }
+    ```
+  - **Response JSON**:
+    ```json
+    {
+      "flashcards": [
+        { "id": 1, "front": "Question 1", "back": "Answer 1", "source": "manual", "generation_id": null },
+        { "id": 2, "front": "Question 2", "back": "Answer 2", "source": "ai-full", "generation_id": 123 }
+      ]
+    }
+    ```
+  - **Validations**:
+    - `front` maximum length: 200 characters.
+    - `back` maximum length: 500 characters.
+    - `source`: Must be one of `ai-full`, `ai-edited`, or `manual`.
+    - `generation_id`: Required for `ai-full` and `ai-edited` sources, must be null for `manual` source.
+  - **Errors**: 400 for invalid inputs, including validation errors for any flashcard in the array.
 
-     ```json
-     {
-       "data": [
-         {
-           "id": 123,
-           "front": "Question?",
-           "back": "Answer.",
-           "source": "manual",
-           "created_at": "2025-04-27T12:34:56Z",
-           "updated_at": "2025-04-27T12:34:56Z"
-         }
-       ],
-       "page": 1,
-       "limit": 10,
-       "total": 50
-     }
-     ```  
+- **PUT `/flashcards/{id}`**
+  - **Description**: Edit an existing flashcard.
+  - **Request JSON**: Fields to update.
+  - **Response JSON**: Updated flashcard object.
+  - **Errors**: 400 for invalid input, 404 if flashcard not found, 401 Unauthorized.
 
-   - **Success Codes:** 200  
-   - **Error Codes:** 401 (unauthorized)
+- **DELETE `/flashcards/{id}`**
+  - **Description**: Delete a flashcard.
+  - **Response JSON**: Success message.
+  - **Errors**: 404 if flashcard not found, 401 Unauthorized.
 
-2. **Create a Flashcard (Manual)**  
-   - **Method:** POST  
-   - **URL:** `/api/flashcards`  
-   - **Description:** Create a new flashcard manually.  
-   - **Request JSON:**
+### 2.3. Generations
 
-     ```json
-     {
-       "front": "What is the capital of France?",
-       "back": "Paris",
-       "source": "manual"
-     }
-     ```  
+- **POST `/generations`**
+  - **Description**: Initiate the AI generation process for flashcards proposals based on user-provided text.
+  - **Request JSON**:
+    ```json
+    {
+      "source_text": "User provided text (1000 to 10000 characters)",
+    }
+    ```
+  - **Business Logic**:
+    - Validate that `source_text` length is between 1000 and 10000 characters.
+    - Call the AI service to generate flashcards proposals.
+    - Store the generation metadata and return flashcard proposals to the user.
+  - **Response JSON**:
+    ```json
+    {
+      "generation_id": 123,
+      "flashcards_proposals": [
+         { "front": "Generated Question", "back": "Generated Answer", "source": "ai-full" }
+      ],
+      "generated_count": 5
+    }
+    ```
+  - **Errors**:
+    - 400: Invalid input.
+    - 500: AI service errors (logs recorded in `generation_error_logs`).
 
-   - **Response JSON:**
+- **GET `/generations`**
+  - **Description**: Retrieve a list of generation requests for the authenticated user.
+  - **Query Parameters**: Supports pagination as needed.
+  - **Response JSON**: List of generation objects with metadata.
 
-     ```json
-     {
-       "id": 124,
-       "front": "What is the capital of France?",
-       "back": "Paris",
-       "source": "manual",
-       "created_at": "2025-04-27T12:45:00Z",
-       "updated_at": "2025-04-27T12:45:00Z"
-     }
-     ```
+- **GET `/generations/{id}`**
+  - **Description**: Retrieve detailed information of a specific generation including its flashcards.
+  - **Response JSON**: Generation details and associated flashcards.
+  - **Errors**: 404 Not Found.
 
-   - **Success Codes:** 201  
-   - **Error Codes:** 400 (validation errors), 401 (unauthorized)
+### 2.4. Generation Error Logs
 
-3. **Update a Flashcard**  
-   - **Method:** PUT  
-   - **URL:** `/api/flashcards/{flashcardId}`  
-   - **Description:** Update an existing flashcard.  
-   - **Request JSON:**
+*(Typically used internally or by admin users)*
 
-     ```json
-     {
-       "front": "Updated question?",
-       "back": "Updated answer."
-     }
-     ```  
-
-   - **Response JSON:**
-
-     ```json
-     {
-       "id": 124,
-       "front": "Updated question?",
-       "back": "Updated answer.",
-       "source": "manual",
-       "created_at": "2025-04-27T12:45:00Z",
-       "updated_at": "2025-04-27T13:00:00Z"
-     }
-     ```  
-
-   - **Success Codes:** 200  
-   - **Error Codes:** 400 (validation error), 401 (unauthorized), 404 (not found)
-
-4. **Delete a Flashcard**  
-   - **Method:** DELETE  
-   - **URL:** `/api/flashcards/{flashcardId}`  
-   - **Description:** Delete a flashcard belonging to the authenticated user.  
-   - **Response JSON:**
-
-     ```json
-     { "message": "Flashcard deleted successfully" }
-     ```  
-
-   - **Success Codes:** 200  
-   - **Error Codes:** 401 (unauthorized), 404 (not found)
-
-### C. AI-Generated Flashcards (Generations)
-
-1. **Generate Flashcards via AI**  
-   - **Method:** POST  
-   - **URL:** `/api/generations`  
-   - **Description:** Submit a text (1000 to 10000 characters) to generate flashcard suggestions using an AI model.  
-   - **Request JSON:**
-
-     ```json
-     {
-       "source_text": "The text to process...",
-       "model": "chosen-model-identifier"
-     }
-     ```  
-
-   - **Response JSON:**
-
-     ```json
-     {
-       "generationId": 456,
-       "flashcards": [
-         { "front": "Generated question?", "back": "Generated answer." }
-       ],
-       "generated_count": 1,
-       "accepted_unedited_count": null,
-       "accepted_edited_count": null,
-       "generation_duration": 3000,
-       "created_at": "2025-04-27T13:20:00Z"
-     }
-     ```  
-
-   - **Success Codes:** 201  
-   - **Error Codes:** 400 (validation error, e.g., if text length is out of bounds), 401 (unauthorized), 500 (AI service error)
-
-2. **Fetch Generation History**  
-   - **Method:** GET  
-   - **URL:** `/api/generations`  
-   - **Description:** Retrieve a history of flashcard generations for the authenticated user.  
-   - **Query Parameters:**  
-     - `page`: number  
-     - `limit`: number  
-   - **Response JSON:**
-
-     ```json
-     {
-       "data": [
-         {
-           "id": 456,
-           "model": "chosen-model-identifier",
-           "generated_count": 1,
-           "accepted_unedited_count": null,
-           "accepted_edited_count": null,
-           "generation_duration": 3000,
-           "created_at": "2025-04-27T13:20:00Z"
-         }
-       ],
-       "page": 1,
-       "limit": 10,
-       "total": 5
-     }
-     ```  
-
-   - **Success Codes:** 200  
-   - **Error Codes:** 401 (unauthorized)
-
-### E. Admin / Internal Endpoints (Optional)
-
-1. **Get Generation Error Logs (Admin only)**  
-   - **Method:** GET  
-   - **URL:** `/api/admin/error-logs`  
-   - **Description:** Retrieve a list of generation error logs; restricted access.  
-   - **Response JSON:**
-
-     ```json
-     {
-       "data": [
-         {
-           "id": 789,
-           "error_code": "AI_GENERATION_FAILED",
-           "error_message": "Detailed error message",
-           "created_at": "2025-04-27T14:00:00Z"
-         }
-       ]
-     }
-     ```  
-
-   - **Success Codes:** 200  
-   - **Error Codes:** 401 (unauthorized), 403 (forbidden)
+- **GET `/generation-error-logs`**
+  - **Description**: Retrieve error logs for AI flashcard generation for the authenticated user or admin.
+  - **Response JSON**: List of error log objects.
+  - **Errors**:
+    - 401 Unauthorized if token is invalid.
+    - 403 Forbidden if access is restricted to admin users.
 
 ## 3. Authentication and Authorization
 
-- **Mechanism:** JWT-based authentication using Supabase Auth integration.
-- **Implementation Details:**  
-  - Users receive a JWT token upon login.  
-  - Endpoints validate the token and extract the user id from the token.  
-  - All endpoints accessing user-specific data ensure that the user id in the token matches the `user_id` in the record using RLS policies (as specified in the DB plan and PRD).
+- **Mechanism**: Token-based authentication using Supabase Auth.
+- **Process**:
+  - Users authenticate via `/auth/login` or `/auth/register`, receiving a bearer token.
+  - Protected endpoints require the token in the `Authorization` header.
+  - Database-level Row-Level Security (RLS) ensures that users access only records with matching `user_id`.
+- **Additional Considerations**: Use HTTPS, rate limiting, and secure error messaging to mitigate security risks.
 
 ## 4. Validation and Business Logic
 
-- **Input Validation:**  
-  - Validate email formats and password strength for registration.  
-  - For AI generation, verify that the `source_text` length is between 1000 and 10000 characters.
-  - Flashframe payloads enforce string lengths and required fields as per database schema constraints.
-- **Error Handling:**  
-  - Use guard clauses and early returns to handle invalid input or authentication errors.  
-  - All endpoints return descriptive error messages along with appropriate HTTP status codes.
-- **Business Logic Implementation:**  
-  - **Registration and Login:** Early validation and token issuance.  
-  - **Flashcard Generation:** Invokes an external AI service and records generation metadata in the `generations` table.  
-  - **Flashcard CRUD:** Allows listing, creation, updating, and deletion while ensuring users only access their own records.  
-  - **Learning Session:** Implements spaced repetition logic to serve the next due flashcard for review.
+- **Validation Rules**:
+  - **Flashcards**:
+    - `front`: Maximum length of 200 characters.
+    - `back`: Maximum length of 500 characters.
+    - `source`: Must be one of `ai-full`, `ai-edited`, or `manual`.
+  - **Generations**:
+    - `source_text`: Must have a length between 1000 and 10000 characters.
+    - `source_text_hash`: Computed for duplicate detection.
+
+- **Business Logic Implementation**:
+  - **AI Generation**:
+    - Validate inputs and call the AI service upon POST `/generations`.
+    - Record generation metadata (model, generated_count, duration) and send generated flashcards proposals to the user.
+    - Log any errors in `generation_error_logs` for auditing and debugging.
+  - **Flashcard Management**:
+    - Automatic update of the `updated_at` field via database triggers when flashcards are modified.
