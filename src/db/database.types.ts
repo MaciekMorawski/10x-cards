@@ -53,7 +53,7 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "fk_generation";
+            foreignKeyName: "flashcards_generation_id_fkey";
             columns: ["generation_id"];
             isOneToOne: false;
             referencedRelation: "generations";
