@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { FlashcardProposalDto, GenerationCreateResponseDto } from "../types";
-import type { SupabaseClient } from "../db/supabase.client";
+import type { supabaseClient } from "../db/supabase.client";
 import { DEFAULT_USER_ID } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
 import { OpenRouterError } from "./openrouter.types";
@@ -122,7 +122,6 @@ Focus on important facts, definitions, concepts, and relationships.`);
   }
 
   private async saveGenerationMetadata(data: {
-    sourceText: string;
     sourceTextHash: string;
     generatedCount: number;
     durationMs: number;

@@ -31,6 +31,7 @@
     - `order` (`asc` or `desc`)
     - Optional filters (e.g., `source`, `generation_id`).
   - **Response JSON**:
+
     ```json
     {
       "data": [
@@ -39,6 +40,7 @@
       "pagination": { "page": 1, "limit": 10, "total": 100 }
     }
     ```
+
   - **Errors**: 401 Unauthorized if token is invalid.
 
 - **GET `/flashcards/{id}`**
@@ -49,6 +51,7 @@
 - **POST `/flashcards`**
   - **Description**: Create one or more flashcards (manually or from AI generation).
   - **Request JSON**:
+
     ```json
     {
       "flashcards": [
@@ -67,7 +70,9 @@
       ]
     }
     ```
+
   - **Response JSON**:
+
     ```json
     {
       "flashcards": [
@@ -76,6 +81,7 @@
       ]
     }
     ```
+
   - **Validations**:
     - `front` maximum length: 200 characters.
     - `back` maximum length: 500 characters.
@@ -88,6 +94,10 @@
   - **Request JSON**: Fields to update.
   - **Response JSON**: Updated flashcard object.
   - **Errors**: 400 for invalid input, 404 if flashcard not found, 401 Unauthorized.
+  - **Validations**:
+    - `front`: Maximum length of 200 characters.
+    - `back`: Maximum length of 500 characters.
+    - `source`: Must be one of `ai-edited`, or `manual`.
 
 - **DELETE `/flashcards/{id}`**
   - **Description**: Delete a flashcard.
@@ -99,16 +109,19 @@
 - **POST `/generations`**
   - **Description**: Initiate the AI generation process for flashcards proposals based on user-provided text.
   - **Request JSON**:
+
     ```json
     {
       "source_text": "User provided text (1000 to 10000 characters)",
     }
     ```
+
   - **Business Logic**:
     - Validate that `source_text` length is between 1000 and 10000 characters.
     - Call the AI service to generate flashcards proposals.
     - Store the generation metadata and return flashcard proposals to the user.
   - **Response JSON**:
+
     ```json
     {
       "generation_id": 123,
@@ -118,6 +131,7 @@
       "generated_count": 5
     }
     ```
+
   - **Errors**:
     - 400: Invalid input.
     - 500: AI service errors (logs recorded in `generation_error_logs`).
