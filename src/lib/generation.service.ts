@@ -69,6 +69,7 @@ Focus on important facts, definitions, concepts, and relationships.`);
       // 3. Save generation metadata
       const generationId = await this.saveGenerationMetadata({
         sourceTextHash,
+        sourceTextLength: sourceText.length,
         generatedCount: proposals.length,
         durationMs: Date.now() - startTime,
       });
@@ -93,7 +94,7 @@ Focus on important facts, definitions, concepts, and relationships.`);
   }
 
   // Zamockowana metoda AI – zwraca przykładowe fiszki niezależnie od wejścia
-  async callAIService(text: string): Promise<FlashcardProposalDto[]> {
+  async callAIService(_text: string): Promise<FlashcardProposalDto[]> {
     return [
       {
         front: "What is the capital of France?",
@@ -110,23 +111,27 @@ Focus on important facts, definitions, concepts, and relationships.`);
 
   private async saveGenerationMetadata(data: {
     sourceTextHash: string;
+    sourceTextLength: number;
     generatedCount: number;
     durationMs: number;
   }): Promise<number> {
     const { data: generation, error } = await this.supabase
       .from("generations")
       .insert({
-        user_id: DEFAULT_USER_ID,
         source_text_hash: data.sourceTextHash,
-        source_text_length: data.sourceText.length,
+        source_text_length: data.sourceTextLength,
         generated_count: data.generatedCount,
         generation_duration: data.durationMs,
         model: this.model,
+        user_id: DEFAULT_USER_ID, // Replace with authenticated user ID when auth is implemented
       })
       .select("id")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(`Failed to save generation metadata: ${error.message}`);
+    }
+
     return generation.id;
   }
 

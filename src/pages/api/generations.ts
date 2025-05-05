@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardProposalDto, GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
 import { GenerationService } from "../../lib/generation.service";
-import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
+import { SupabaseClient } from "../../db/supabase.client";
+import { LocalsNotAnObject } from "node_modules/astro/dist/core/errors/errors-data";
 
 export const prerender = false;
 
@@ -14,9 +15,8 @@ const generateFlashcardsSchema = z.object({
     .max(10000, "Text must not exceed 10000 characters"),
 });
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Parse and validate request body
     const body = (await request.json()) as GenerateFlashcardsCommand;
     const validationResult = generateFlashcardsSchema.safeParse(body);
 
@@ -26,24 +26,14 @@ export const POST: APIRoute = async ({ request }) => {
           error: "Invalid request data",
           details: validationResult.error.errors,
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Użyj GenerationService i mockowanej metody callAIService
-    const generationService = new GenerationService(supabaseClient, { apiKey: "mock" });
-    const mockFlashcards = await generationService.callAIService(validationResult.data.source_text);
+    const generationService = new GenerationService(locals.supabase as SupabaseClient, { apiKey: "mock" });
+    const result = await generationService.generateFlashcards(validationResult.data.source_text);
 
-    const mockResult: GenerationCreateResponseDto = {
-      generation_id: 1,
-      flashcards_proposals: mockFlashcards,
-      generated_count: mockFlashcards.length,
-    };
-
-    return new Response(JSON.stringify(mockResult), {
+    return new Response(JSON.stringify(result), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
