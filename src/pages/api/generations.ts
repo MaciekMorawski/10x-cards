@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardProposalDto, GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
+import { GenerationService } from "../../lib/generation.service";
+import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
 
 export const prerender = false;
 
@@ -31,20 +33,9 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Initialize service and generate flashcards
-    // MOCK response using FlashcardProposalDto interface
-    const mockFlashcards: FlashcardProposalDto[] = [
-      {
-        front: "What is the capital of France?",
-        back: "Paris",
-        source: "ai-full",
-      },
-      {
-        front: "Who wrote 'Romeo and Juliet'?",
-        back: "William Shakespeare",
-        source: "ai-full",
-      },
-    ];
+    // Użyj GenerationService i mockowanej metody callAIService
+    const generationService = new GenerationService(supabaseClient, { apiKey: "mock" });
+    const mockFlashcards = await generationService.callAIService(validationResult.data.source_text);
 
     const mockResult: GenerationCreateResponseDto = {
       generation_id: 1,

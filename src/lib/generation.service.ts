@@ -92,34 +92,20 @@ Focus on important facts, definitions, concepts, and relationships.`);
     return crypto.createHash("md5").update(text).digest("hex");
   }
 
-  private async callAIService(text: string): Promise<FlashcardProposalDto[]> {
-    try {
-      // Set the user message with the source text
-      this.openRouter.setUserMessage(`Generate flashcards from the following text:\n\n${text}`);
-
-      // Get response from OpenRouter
-      const response = await this.openRouter.sendChatMessage();
-
-      // Parse the JSON response
-      const data = JSON.parse(response);
-
-      // Validate response structure
-      if (!data.flashcards || !Array.isArray(data.flashcards)) {
-        throw new Error("Invalid response format: missing flashcards array");
-      }
-
-      // Convert to FlashcardProposalDto format
-      return data.flashcards.map((card: { front: string; back: string }) => ({
-        front: card.front,
-        back: card.back,
-        source: "ai-full" as const,
-      }));
-    } catch (error) {
-      if (error instanceof OpenRouterError) {
-        throw new Error(`AI Service error: ${error.message} (${error.code})`);
-      }
-      throw error;
-    }
+  // Zamockowana metoda AI – zwraca przykładowe fiszki niezależnie od wejścia
+  async callAIService(text: string): Promise<FlashcardProposalDto[]> {
+    return [
+      {
+        front: "What is the capital of France?",
+        back: "Paris",
+        source: "ai-full",
+      },
+      {
+        front: "Who wrote 'Romeo and Juliet'?",
+        back: "William Shakespeare",
+        source: "ai-full",
+      },
+    ];
   }
 
   private async saveGenerationMetadata(data: {
