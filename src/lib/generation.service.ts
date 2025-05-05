@@ -1,9 +1,11 @@
 import crypto from "crypto";
 import type { FlashcardProposalDto, GenerationCreateResponseDto } from "../types";
-import type { supabaseClient } from "../db/supabase.client";
+import type { SupabaseClient } from "../db/supabase.client";
 import { DEFAULT_USER_ID } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
 import { OpenRouterError } from "./openrouter.types";
+
+// Replace with the actual default user ID
 
 export class GenerationService {
   private readonly openRouter: OpenRouterService;
@@ -66,7 +68,6 @@ Focus on important facts, definitions, concepts, and relationships.`);
 
       // 3. Save generation metadata
       const generationId = await this.saveGenerationMetadata({
-        sourceText,
         sourceTextHash,
         generatedCount: proposals.length,
         durationMs: Date.now() - startTime,
