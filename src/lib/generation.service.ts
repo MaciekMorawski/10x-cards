@@ -3,7 +3,6 @@ import type { FlashcardProposalDto, GenerationCreateResponseDto } from "../types
 import type { SupabaseClient } from "../db/supabase.client";
 import { DEFAULT_USER_ID } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
-import { OpenRouterError } from "./openrouter.types";
 
 // Replace with the actual default user ID
 

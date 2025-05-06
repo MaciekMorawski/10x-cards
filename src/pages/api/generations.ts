@@ -1,9 +1,8 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import type { FlashcardProposalDto, GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
+import type { GenerateFlashcardsCommand } from "../../types";
 import { GenerationService } from "../../lib/generation.service";
-import { SupabaseClient } from "../../db/supabase.client";
-import { LocalsNotAnObject } from "node_modules/astro/dist/core/errors/errors-data";
+import type { SupabaseClient } from "../../db/supabase.client";
 
 export const prerender = false;
 

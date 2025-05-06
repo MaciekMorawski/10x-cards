@@ -8,11 +8,11 @@ Endpoint zwracający listę żądań generacji dla zalogowanego użytkownika z o
 
 ### GET /generations/{id}
 
-Endpoint zwracający szczegółowe informacje o konkretnej generacji 
+Endpoint zwracający szczegółowe informacje o konkretnej generacji
 
 ## 2. Szczegóły żądania
 
-### GET /generations
+### **GET /generations**
 
 - Metoda HTTP: GET
 - Struktura URL: `/generations`
@@ -22,7 +22,7 @@ Endpoint zwracający szczegółowe informacje o konkretnej generacji
 - Headers:
   - Accept: application/json
 
-### GET /generations/{id}
+### **GET /generations/{id}**
 
 - Metoda HTTP: GET
 - Struktura URL: `/generations/{id}`
@@ -57,7 +57,7 @@ type GenerationDetailDto = Generation & {
 
 ## 4. Przepływ danych
 
-**GET /generations**
+### 4.1 **GET /generations**
 
 - Walidacja parametrów paginacji
 - Pobranie total count dla paginacji
@@ -65,7 +65,7 @@ type GenerationDetailDto = Generation & {
 - Mapowanie do DTO
 - Zwrócenie odpowiedzi z paginacją
 
-**GET /generations/{id}**
+### 4.2 **GET /generations/{id}**
 
 -Walidacja ID generacji
 -Pobranie generacji z bazy
@@ -126,4 +126,3 @@ const paginationSchema = z.object({
 - Użycie GenerationService
 - Obsługa 404
 - Dołączenie powiązanych fiszek
-

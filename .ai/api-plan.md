@@ -148,7 +148,7 @@
 
 ### 2.4. Generation Error Logs
 
-*(Typically used internally or by admin users)*
+<!-- *(Typically used internally or by admin users)* -->
 
 - **GET `/generation-error-logs`**
   - **Description**: Retrieve error logs for AI flashcard generation for the authenticated user or admin.
