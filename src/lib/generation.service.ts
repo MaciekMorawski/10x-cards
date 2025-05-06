@@ -1,5 +1,10 @@
 import crypto from "crypto";
-import type { FlashcardProposalDto, GenerationCreateResponseDto } from "../types";
+import type {
+  FlashcardProposalDto,
+  GenerationCreateResponseDto,
+  GenerationsListResponseDto,
+  GenerationDetailDto,
+} from "../types";
 import type { SupabaseClient } from "../db/supabase.client";
 import { DEFAULT_USER_ID } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
@@ -149,5 +154,67 @@ Focus on important facts, definitions, concepts, and relationships.`);
       source_text_hash: data.sourceTextHash,
       source_text_length: data.sourceTextLength,
     });
+  }
+
+  async list(userId: string, page: number, limit: number): Promise<GenerationsListResponseDto> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    // Get total count for pagination
+    const { count, error: countError } = await this.supabase
+      .from("generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (countError) {
+      throw new Error(`Failed to get generations count: ${countError.message}`);
+    }
+
+    // Get paginated generations
+    const { data: generations, error } = await this.supabase
+      .from("generations")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to list generations: ${error.message}`);
+    }
+
+    return {
+      data: generations,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+      },
+    };
+  }
+
+  async getById(userId: string, id: number): Promise<GenerationDetailDto | null> {
+    // Get generation with its flashcards, filtered by user_id for security
+    const { data: generation, error } = await this.supabase
+      .from("generations")
+      .select(
+        `
+        *,
+        flashcards (
+          id, front, back, source, generation_id, created_at, updated_at
+        )
+      `
+      )
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null; // Record not found
+      }
+      throw new Error(`Failed to get generation: ${error.message}`);
+    }
+
+    return generation;
   }
 }
