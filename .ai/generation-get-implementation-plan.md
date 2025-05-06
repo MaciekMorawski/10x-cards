@@ -8,7 +8,7 @@ Endpoint zwracający listę żądań generacji dla zalogowanego użytkownika z o
 
 ### GET /generations/{id}
 
-Endpoint zwracający szczegółowe informacje o konkretnej generacji wraz z powiązanymi fiszkami.
+Endpoint zwracający szczegółowe informacje o konkretnej generacji 
 
 ## 2. Szczegóły żądania
 
@@ -61,9 +61,9 @@ type GenerationDetailDto = Generation & {
 
 - Walidacja parametrów paginacji
 - Pobranie total count dla paginacji
--Pobranie generacji dla użytkownika z paginacją
--Mapowanie do DTO
--Zwrócenie odpowiedzi z paginacją
+- Pobranie generacji dla użytkownika z paginacją
+- Mapowanie do DTO
+- Zwrócenie odpowiedzi z paginacją
 
 **GET /generations/{id}**
 
@@ -92,7 +92,6 @@ Sanityzacja danych wyjściowych (tylko wymagane pola)
 Indeks na kolumnie user_id w tabeli generations
 Indeks na kolumnie generation_id w tabeli flashcards
 Limit ilości zwracanych rekordów
-Optymalizacja zapytań przez JOIN
 
 ## 8. Etapy wdrożenia
 
@@ -128,21 +127,3 @@ const paginationSchema = z.object({
 - Obsługa 404
 - Dołączenie powiązanych fiszek
 
-### 8.5 Testy
-
-- Testy jednostkowe GenerationService
-- Testy integracyjne endpointów
-- Testy wydajności dla dużych zbiorów danych
-
-### 8.6 Dokumentacja
-
-- Aktualizacja OpenAPI/Swagger
-- Przykłady użycia
-- Opis kodów błędów
-
-### 8.7 Weryfikacja
-
-- Code review
-- Testy bezpieczeństwa
-- Weryfikacja wydajności
-- Sprawdzenie zgodności z wymaganiami
