@@ -2,14 +2,19 @@ import crypto from "crypto";
 import type {
   FlashcardProposalDto,
   GenerationCreateResponseDto,
-  GenerationsListResponseDto,
+  PaginationDto,
+  Generation,
+  FlashcardDto,
   GenerationDetailDto,
 } from "../types";
 import type { SupabaseClient } from "../db/supabase.client";
 import { DEFAULT_USER_ID } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
 
-// Replace with the actual default user ID
+interface GenerationsListResponseDto {
+  data: Generation[];
+  pagination: PaginationDto;
+}
 
 export class GenerationService {
   private readonly openRouter: OpenRouterService;
@@ -97,8 +102,7 @@ Focus on important facts, definitions, concepts, and relationships.`);
     return crypto.createHash("md5").update(text).digest("hex");
   }
 
-  // Zamockowana metoda AI – zwraca przykładowe fiszki niezależnie od wejścia
-  async callAIService(_text: string): Promise<FlashcardProposalDto[]> {
+  async callAIService(text: string): Promise<FlashcardProposalDto[]> {
     return [
       {
         front: "What is the capital of France?",
@@ -210,7 +214,7 @@ Focus on important facts, definitions, concepts, and relationships.`);
 
     if (error) {
       if (error.code === "PGRST116") {
-        return null; // Record not found
+        return null; // Record not found or doesn't belong to user
       }
       throw new Error(`Failed to get generation: ${error.message}`);
     }

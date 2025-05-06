@@ -73,22 +73,30 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
           JSON.stringify({
             error: "Invalid generation ID",
           }),
-          { status: 400 }
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
         );
       }
 
-      const generation = await generationService.getById(locals.user.id, parsedId.data);
+      const generation = await generationService.getById(user.id, parsedId.data);
 
       if (!generation) {
         return new Response(
           JSON.stringify({
             error: "Generation not found",
           }),
-          { status: 404 }
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
         );
       }
 
-      return new Response(JSON.stringify(generation));
+      return new Response(JSON.stringify(generation), {
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // List generations with pagination
@@ -106,17 +114,21 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
     }
 
     const { page, limit } = validatedParams.data;
-    const result = await generationService.list(locals.user.id, page, limit);
+    const result = await generationService.list(user.id, page, limit);
 
     return new Response(JSON.stringify(result));
   } catch (error) {
-    console.error("Error in generations endpoint:", error);
+    // Log error and return 500
+    await locals.logger?.error("Error in generations endpoint:", error);
     return new Response(
       JSON.stringify({
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error occurred",
       }),
-      { status: 500 }
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 };
