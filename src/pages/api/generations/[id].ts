@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { GenerationService } from "../../../lib/generation.service";
+import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 export const prerender = false; //prerender
 
@@ -18,7 +19,9 @@ export const GET: APIRoute = async ({ params, locals }) => {
   }
 
   // TODO: Pobierz user.id z locals lub sesji
-  const userId = locals.user?.id;
+  //   const userId = locals.user?.id;
+  const userId = DEFAULT_USER_ID;
+
   //   if (!userId) {
   //     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   //   }
