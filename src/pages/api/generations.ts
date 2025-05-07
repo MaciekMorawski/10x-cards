@@ -3,6 +3,7 @@ import type { APIRoute } from "astro";
 import type { GenerateFlashcardsCommand } from "../../types";
 import { GenerationService } from "../../lib/generation.service";
 import type { SupabaseClient } from "../../db/supabase.client";
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 export const prerender = false;
 
@@ -56,6 +57,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
 export const GET: APIRoute = async ({ request, url, locals }) => {
   try {
+    const user: {
+      id: string;
+    } = {
+      id: DEFAULT_USER_ID,
+    };
+
     const generationService = new GenerationService(locals.supabase, {
       apiKey: import.meta.env.OPENROUTER_API_KEY,
     });
